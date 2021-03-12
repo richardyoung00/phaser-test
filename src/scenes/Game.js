@@ -14,6 +14,7 @@ export default class Game extends Phaser.Scene {
 
     init() {
         this.cursors = this.input.keyboard.createCursorKeys()
+        this.connection = this.registry.get('connection')
     }
 
     create() {
@@ -24,6 +25,11 @@ export default class Game extends Phaser.Scene {
         // const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
         // this.scale.displaySize.setAspectRatio( vw/vh );
         // this.scale.refresh();
+
+        this.connection.beginHosting()
+        const hostId = this.connection.hostId
+
+        let hostIdText = this.add.text(6,6, 'Game join code: ' + hostId, {font: '12px Arial', fill: '#ffffff'})
 
         this.anims.create({
             key: 'down-idle',
