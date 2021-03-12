@@ -13,6 +13,9 @@ const config = {
 			gravity: { y: 0 }
 		}
 	},
+	scale: {
+		mode: Phaser.Scale.FIT,
+	},
 	scene: [Preloader, Game]
 }
 

@@ -17,6 +17,14 @@ export default class Game extends Phaser.Scene {
     }
 
     create() {
+        const { width, height } = this.scale
+
+        // Set aspect ratio to the same as viewport (may break on portrait or weird sized screens)
+        // const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0)
+        // const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
+        // this.scale.displaySize.setAspectRatio( vw/vh );
+        // this.scale.refresh();
+
         this.anims.create({
             key: 'down-idle',
             frames: [{ key: 'sokoban', frame: 52 }]
@@ -65,7 +73,7 @@ export default class Game extends Phaser.Scene {
             repeat: -1
         })
 
-        const { width, height } = this.scale
+        
         this.player = this.physics.add.sprite(width * 0.5, height * 0.6, 'sokoban')
             .play('down-idle')
     }
