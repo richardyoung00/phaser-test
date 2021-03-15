@@ -3,10 +3,33 @@ import Phaser from 'phaser'
 import Preloader from './scenes/Preloader'
 import Game from './scenes/game'
 import Connection from './multiplayer/connection'
+import GameState from "./gameState";
 
 const conn = new Connection()
+const gameState = new GameState()
+
+gameState.addPlayer({
+	id: conn.peerId,
+	name: "Player 1",
+	x: 100,
+	y: 100,
+	texture: "sokoban",
+	animation: "down-idle"
+})
+
+setTimeout(() => {
+	gameState.addPlayer({
+		id: "abc123",
+		name: "Player 1",
+		x: 200,
+		y: 300,
+		texture: "sokoban",
+		animation: "down-idle"
+	})
+}, 5000)
 
 window.conn = conn
+window.gameState = gameState
 
 
 const config = {
@@ -27,5 +50,6 @@ const config = {
 const game = new Phaser.Game(config)
 
 game.registry.set('connection', conn)
+game.registry.set('gameState', gameState)
 
 export default game

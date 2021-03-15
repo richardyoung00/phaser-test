@@ -10,11 +10,14 @@ export default class Game extends Phaser.Scene {
 
     constructor() {
         super('game')
+        this.player = null
+        this.playerSprites = {}
     }
 
     init() {
         this.cursors = this.input.keyboard.createCursorKeys()
         this.connection = this.registry.get('connection')
+        this.gameState = this.registry.get('gameState')
     }
 
     create() {
@@ -28,6 +31,7 @@ export default class Game extends Phaser.Scene {
 
         this.connection.beginHosting()
         const hostId = this.connection.hostId
+        this.peerId = this.connection.peerId
 
         let hostIdText = this.add.text(6,6, 'Game join code: ' + hostId, {font: '12px Arial', fill: '#ffffff'})
 
@@ -79,10 +83,49 @@ export default class Game extends Phaser.Scene {
             repeat: -1
         })
 
+        this.renderPlayerSprites()
+        // this.gameState.onchange = () => {
+        //     this.renderPlayerSprites()
+        // }
+
         
-        this.player = this.physics.add.sprite(width * 0.5, height * 0.6, 'sokoban')
-            .play('down-idle')
+        // this.player = this.physics.add.sprite(width * 0.5, height * 0.6, 'sokoban')
+        //     .play('down-idle')
+
+        // this.cameras.main.startFollow(this.player);
     }
+
+    renderPlayerSprites() {
+        const allPlayers = this.gameState.getPlayers()
+        for (let p of allPlayers) {
+
+
+            if (!this.playerSprites[p.id]) { //add new sprite
+                this.playerSprites[p.id] = this.physics.add.sprite(p.x, p.y, p.texture).play(p.animation)
+                if (p.id === this.peerId) {
+                    this.player = this.playerSprites[p.id]
+                    this.cameras.main.startFollow(this.player);
+                }
+
+            } else { // update the existing sprite
+                this.playerSprites[p.id].setX(p.x).setY(p.y).setTexture(p.texture).play(p.animation)
+            }
+
+        }
+
+    }
+
+    updatePlayer() {
+        let p = {
+            id: this.peerId,
+            x: this.player.x,
+            y: this.player.y,
+            texture: this.player.texture,
+            animation: this.player.anims.currentAnim.key,
+        }
+        this.gameState.updatePlayer(p)
+    }
+
 
     update() {
         const speed = 200
@@ -110,5 +153,11 @@ export default class Game extends Phaser.Scene {
             const direction = parts[0]
             this.player.play(`${direction}-idle`)
         }
+
+        //todo only do this when something changes
+        this.updatePlayer()
+
+
+        this.renderPlayerSprites()
     }
 }
