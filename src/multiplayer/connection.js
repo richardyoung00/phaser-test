@@ -20,11 +20,12 @@ export default class Connection {
         });
 
         this.peer.on('error', err => {
-            console.log('Error: ', err);
+            console.log('Error1: ', err);
         });
     }
 
     async beginHosting() {
+        console.error("hosting")
         this.isHosting = true
         this.hostId = this.peerId
         this.peer.on('connection', async (connection) => {
@@ -40,13 +41,13 @@ export default class Connection {
         });
     }
 
-    async connectToHost(peerId, metadata) {
+    async connectToHost(hostId, metadata) {
         this.isHosting = false
-        console.log("connecting to " + peerId)
-        this.hostConnection = this.peer.connect(peerId, {metadata});
+        console.log("connecting to " + hostId)
+        this.hostConnection = this.peer.connect(hostId, {metadata});
         this.hostId = this.hostConnection.peer
         console.log("done")
-        await this.setupConnectionHandlers()
+        await this.setupConnectionHandlers(this.hostConnection)
         //todo handle connection close
         if (this.onConnectedToHost) {
             this.onConnectedToHost(this.hostConnection.peer, this.hostConnection.metadata)
@@ -67,23 +68,53 @@ export default class Connection {
         this.guestConnections[peerId].send(data);
     }
 
-    async setupConnectionHandlers(conn) {
-        await new Promise((resolve) => {
+    sendToAllGuests(data) {
+        if (!this.isHosting) {
+            throw new Error("Cannot send data to guest if you are not the host")
+        }
+        for (let peerId of Object.keys(this.guestConnections)) {
+            if (this.guestConnections[peerId].open) {
+                this.guestConnections[peerId].send(data);
+            }
+
+        }
+
+    }
+
+    async ensureConnectionOpen(conn) {
+        return new Promise((resolve, reject) => {
+            if (conn.open) {
+                resolve()
+            }
             conn.on('open', function () {
                 console.log("Connection open")
                 resolve()
             });
+
+            conn.on('error', function (error) {
+                console.error('Connection error', error);
+                reject()
+            });
+
+            this.peer.on('error', err => {
+                console.error(err);
+                reject()
+            });
         })
+    }
 
-        conn.on('data', function (data) {
-            console.log('Received', data);
+    async setupConnectionHandlers(conn) {
+        await this.ensureConnectionOpen(conn)
+
+        conn.on('data', (data) => {
+            if (this.onMessage) {
+                this.onMessage(data)
+            }
         });
 
-        conn.on('error', function (error) {
-            console.error('Connection error', error);
-        });
 
-        conn.on('close', function () {
+
+        conn.on('close', () => {
             console.error('Connection closed');
         });
 

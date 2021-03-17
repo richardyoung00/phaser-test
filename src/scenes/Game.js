@@ -41,7 +41,6 @@ export default class Game extends Phaser.Scene {
         // this.scale.displaySize.setAspectRatio( vw/vh );
         // this.scale.refresh();
 
-        this.connection.beginHosting()
         const hostId = this.connection.hostId
         this.peerId = this.connection.peerId
 
@@ -53,6 +52,9 @@ export default class Game extends Phaser.Scene {
         this.renderPlayerSprites()
 
         this.input.on('pointermove',  (cursor) => {
+            if (!this.player) {
+                return
+            }
             const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, cursor.x + this.cameras.main.scrollX, cursor.y + this.cameras.main.scrollY)
             this.player.setRotation(angle + (Math.PI/2))
         })
@@ -84,7 +86,7 @@ export default class Game extends Phaser.Scene {
             id: this.peerId,
             x: this.player.x,
             y: this.player.y,
-            texture: this.player.texture,
+            texture: this.player.texture.key,
             rotation: this.player.rotation,
         }
         this.gameState.updatePlayer(p)
@@ -92,6 +94,10 @@ export default class Game extends Phaser.Scene {
 
 
     update() {
+
+        if (!this.player) {
+            return
+        }
         const speed = 200
 
         if (this.cursors.left.isDown || this.cursors.left_alt.isDown) {
