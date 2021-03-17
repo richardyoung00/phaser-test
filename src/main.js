@@ -25,7 +25,7 @@ setTimeout(() => {
 		x: 200,
 		y: 300,
 		texture: "character",
-		rotation: 0
+		rotation: 2
 	})
 }, 5000)
 
@@ -37,6 +37,7 @@ const config = {
 	type: Phaser.AUTO,
 	width: 800,
 	height: 600,
+	parent: "game-container",
 	physics: {
 		default: 'arcade',
 		arcade: {

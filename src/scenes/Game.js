@@ -15,7 +15,19 @@ export default class Game extends Phaser.Scene {
     }
 
     init() {
-        this.cursors = this.input.keyboard.createCursorKeys()
+
+        this.cursors = this.input.keyboard.addKeys({
+            up: Phaser.Input.Keyboard.KeyCodes.UP,
+            down: Phaser.Input.Keyboard.KeyCodes.DOWN,
+            left: Phaser.Input.Keyboard.KeyCodes.LEFT,
+            right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
+            space: Phaser.Input.Keyboard.KeyCodes.SPACE,
+            shift: Phaser.Input.Keyboard.KeyCodes.SHIFT,
+            up_alt: Phaser.Input.Keyboard.KeyCodes.W,
+            down_alt: Phaser.Input.Keyboard.KeyCodes.S,
+            left_alt: Phaser.Input.Keyboard.KeyCodes.A,
+            right_alt: Phaser.Input.Keyboard.KeyCodes.D
+        });
         this.connection = this.registry.get('connection')
         this.gameState = this.registry.get('gameState')
     }
@@ -33,7 +45,10 @@ export default class Game extends Phaser.Scene {
         const hostId = this.connection.hostId
         this.peerId = this.connection.peerId
 
-        let hostIdText = this.add.text(6,6, 'Game join code: ' + hostId, {font: '12px Arial', fill: '#ffffff'})
+        let ts = this.add.tileSprite(0, 0, 1000, 1000, 'concrete')
+
+        let hostIdText = this.add.text(6,6, 'Game join code: ' + hostId, {font: '12px Arial', fill: '#ffffff'}).setScrollFactor(0);
+
 
         this.renderPlayerSprites()
 
@@ -79,16 +94,16 @@ export default class Game extends Phaser.Scene {
     update() {
         const speed = 200
 
-        if (this.cursors.left.isDown) {
+        if (this.cursors.left.isDown || this.cursors.left_alt.isDown) {
             this.player.setVelocity(-speed, 0)
         }
-        else if (this.cursors.right.isDown) {
+        else if (this.cursors.right.isDown || this.cursors.right_alt.isDown) {
             this.player.setVelocity(speed, 0)
         }
-        else if (this.cursors.up.isDown) {
+        else if (this.cursors.up.isDown || this.cursors.up_alt.isDown) {
             this.player.setVelocity(0, -speed)
         }
-        else if (this.cursors.down.isDown) {
+        else if (this.cursors.down.isDown || this.cursors.down_alt.isDown) {
             this.player.setVelocity(0, speed)
         }
         else {

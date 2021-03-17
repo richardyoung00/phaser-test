@@ -10,6 +10,7 @@ export default class Preloader extends Phaser.Scene {
             frameWidth: 64
         })
         this.load.image('character', 'textures/characters.png');
+        this.load.image('concrete', 'textures/concrete.jpg');
     }
 
     create() {
