@@ -35,64 +35,13 @@ export default class Game extends Phaser.Scene {
 
         let hostIdText = this.add.text(6,6, 'Game join code: ' + hostId, {font: '12px Arial', fill: '#ffffff'})
 
-        this.anims.create({
-            key: 'down-idle',
-            frames: [{ key: 'sokoban', frame: 52 }]
-        })
-
-        this.anims.create({
-            key: 'up-idle',
-            frames: [{ key: 'sokoban', frame: 55 }]
-        })
-
-        this.anims.create({
-            key: 'left-idle',
-            frames: [{ key: 'sokoban', frame: 81 }]
-        })
-
-        this.anims.create({
-            key: 'right-idle',
-            frames: [{ key: 'sokoban', frame: 78 }]
-        })
-
-        this.anims.create({
-            key: 'down-walk',
-            frames: this.anims.generateFrameNumbers('sokoban', { start: 52, end: 54 }),
-            frameRate: 10,
-            repeat: -1
-        })
-
-        this.anims.create({
-            key: 'up-walk',
-            frames: this.anims.generateFrameNumbers('sokoban', { start: 55, end: 57 }),
-            frameRate: 10,
-            repeat: -1
-        })
-
-        this.anims.create({
-            key: 'left-walk',
-            frames: this.anims.generateFrameNumbers('sokoban', { start: 81, end: 83 }),
-            frameRate: 10,
-            repeat: -1
-        })
-
-        this.anims.create({
-            key: 'right-walk',
-            frames: this.anims.generateFrameNumbers('sokoban', { start: 78, end: 80 }),
-            frameRate: 10,
-            repeat: -1
-        })
-
         this.renderPlayerSprites()
-        // this.gameState.onchange = () => {
-        //     this.renderPlayerSprites()
-        // }
 
-        
-        // this.player = this.physics.add.sprite(width * 0.5, height * 0.6, 'sokoban')
-        //     .play('down-idle')
+        this.input.on('pointermove',  (cursor) => {
+            const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, cursor.x + this.cameras.main.scrollX, cursor.y + this.cameras.main.scrollY)
+            this.player.setRotation(angle + (Math.PI/2))
+        })
 
-        // this.cameras.main.startFollow(this.player);
     }
 
     renderPlayerSprites() {
@@ -101,14 +50,14 @@ export default class Game extends Phaser.Scene {
 
 
             if (!this.playerSprites[p.id]) { //add new sprite
-                this.playerSprites[p.id] = this.physics.add.sprite(p.x, p.y, p.texture).play(p.animation)
+                this.playerSprites[p.id] = this.physics.add.sprite(p.x, p.y, p.texture).setRotation(p.rotation)
                 if (p.id === this.peerId) {
                     this.player = this.playerSprites[p.id]
                     this.cameras.main.startFollow(this.player);
                 }
 
             } else { // update the existing sprite
-                this.playerSprites[p.id].setX(p.x).setY(p.y).setTexture(p.texture).play(p.animation)
+                this.playerSprites[p.id].setX(p.x).setY(p.y).setTexture(p.texture).setRotation(p.rotation)
             }
 
         }
@@ -121,7 +70,7 @@ export default class Game extends Phaser.Scene {
             x: this.player.x,
             y: this.player.y,
             texture: this.player.texture,
-            animation: this.player.anims.currentAnim.key,
+            rotation: this.player.rotation,
         }
         this.gameState.updatePlayer(p)
     }
@@ -132,26 +81,18 @@ export default class Game extends Phaser.Scene {
 
         if (this.cursors.left.isDown) {
             this.player.setVelocity(-speed, 0)
-            this.player.play('left-walk', true)
         }
         else if (this.cursors.right.isDown) {
             this.player.setVelocity(speed, 0)
-            this.player.play('right-walk', true)
         }
         else if (this.cursors.up.isDown) {
             this.player.setVelocity(0, -speed)
-            this.player.play('up-walk', true)
         }
         else if (this.cursors.down.isDown) {
             this.player.setVelocity(0, speed)
-            this.player.play('down-walk', true)
         }
         else {
             this.player.setVelocity(0, 0)
-            const key = this.player.anims.currentAnim.key
-            const parts = key.split('-')
-            const direction = parts[0]
-            this.player.play(`${direction}-idle`)
         }
 
         //todo only do this when something changes
