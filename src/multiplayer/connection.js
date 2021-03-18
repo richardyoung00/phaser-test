@@ -22,6 +22,10 @@ export default class Connection {
 
         this.peer.on('error', err => {
             console.log('Error1: ', err);
+            console.log('reconnecting');
+            // todo reconnect
+            this.peer.disconnect()
+            this.peer.reconnect()
         });
     }
 
@@ -32,7 +36,9 @@ export default class Connection {
         this.peer.on('connection', async (connection) => {
             this.guestConnections[connection.peer] = connection
 
-            console.log('A guest has joined');
+            this.hostConnection.send("hello from host")
+
+            console.log('Connecting to peer ' + connection.peer);
             await this.setupConnectionHandlers(connection)
             //todo handle connection close
 
@@ -46,8 +52,10 @@ export default class Connection {
         this.isHosting = false
         console.log("connecting to " + hostId)
         this.hostConnection = this.peer.connect(hostId, {metadata});
+
+        this.hostConnection.send("hello from guest")
         this.hostId = this.hostConnection.peer
-        console.log("done")
+        console.log("waiting for connection...")
         await this.setupConnectionHandlers(this.hostConnection)
         //todo handle connection close
         if (this.onConnectedToHost) {
@@ -87,6 +95,7 @@ export default class Connection {
             if (conn.open) {
                 resolve()
             }
+            console.log(conn)
             conn.on('open', function () {
                 console.log("Connection open")
                 resolve()
@@ -108,6 +117,7 @@ export default class Connection {
         await this.ensureConnectionOpen(conn)
 
         conn.on('data', (data) => {
+            console.log(data)
             if (this.onMessage) {
                 this.onMessage(data)
             }
