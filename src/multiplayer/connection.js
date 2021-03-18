@@ -9,9 +9,10 @@ export default class Connection {
         this.hostId = null
 
         this.peer = new Peer(this.peerId, {
-            host: '192.168.0.126',
-            port: 9000,
-            path: '/myapp'
+            host: 'richard-peerjs-server.herokuapp.com',
+            port: 443,
+            path: '/',
+            secure: true
         });
 
         this.peer.on('open', id => {
