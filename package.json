@@ -3,8 +3,9 @@
 	"version": "1.0.0",
 	"description": "A template project for Phaser 3 using Parceljs",
 	"scripts": {
-		"start": "parcel src/index.html -p 8000",
-		"build": "parcel build src/index.html --out-dir docs",
+		"start": "vite src --port 8000",
+		"build": "vite build src --outDir ../docs --emptyOutDir --base /phaser-test/ --sourcemap true",
+		"postbuild": "cp -a public/. docs/",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"author": "supertommy",
