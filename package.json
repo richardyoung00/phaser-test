@@ -4,7 +4,7 @@
 	"description": "A template project for Phaser 3 using Parceljs",
 	"scripts": {
 		"start": "vite src --port 8000",
-		"build": "vite build src --outDir ../docs --emptyOutDir --base /phaser-test/ --sourcemap true",
+		"build": "vite build src --outDir ../docs --emptyOutDir --base /phaser-test/ --sourcemap true --assetsInlineLimit 0",
 		"postbuild": "cp -a public/. docs/",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
