@@ -36,7 +36,7 @@ export default class Connection {
         this.peer.on('connection', async (connection) => {
             this.guestConnections[connection.peer] = connection
 
-            this.hostConnection.send("hello from host")
+            connection.send("hello from host")
 
             console.log('Connecting to peer ' + connection.peer);
             await this.setupConnectionHandlers(connection)
