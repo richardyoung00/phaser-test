@@ -54,7 +54,7 @@ function hostGame(username) {
 
 	connection.beginHosting()
 
-	const newUrl = window.origin + window.pathname + '?gameId=' + connection.hostId;
+	const newUrl = window.location.origin + window.location.pathname + '?gameId=' + connection.hostId;
 	window.history.pushState({path:newUrl},'',newUrl);
 
 	start()
