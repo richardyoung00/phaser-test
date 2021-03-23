@@ -82,14 +82,16 @@ export default class Game extends Phaser.Scene {
     }
 
     updatePlayer() {
-        let p = {
+        let newPlayerState = {
             id: this.peerId,
+            name: this.name,
             x: this.player.x,
             y: this.player.y,
             texture: this.player.texture.key,
             rotation: this.player.rotation,
         }
-        this.gameState.updatePlayer(p)
+
+        this.gameState.updatePlayer(newPlayerState)
     }
 
 
@@ -116,7 +118,6 @@ export default class Game extends Phaser.Scene {
             this.player.setVelocity(0, 0)
         }
 
-        //todo only do this when something changes
         this.updatePlayer()
 
 

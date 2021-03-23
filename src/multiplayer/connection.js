@@ -30,7 +30,6 @@ export default class Connection {
     }
 
     async beginHosting() {
-        console.error("hosting")
         this.isHosting = true
         this.hostId = this.peerId
         this.peer.on('connection', async (connection) => {

@@ -1,3 +1,5 @@
+import deepEquals from "fast-deep-equal/es6"
+
 export default class GameState {
     constructor(connection) {
         this.connection = connection
@@ -10,7 +12,7 @@ export default class GameState {
         }
     }
 
-    onChange() {
+    sendUpdatedGameState() {
         if (this.connection.isHosting) {
             this.connection.sendToAllGuests({
                 type: "game-state",
@@ -46,6 +48,7 @@ export default class GameState {
                     break;
                 case "player-state":
                     this.state.players[message.data.id] = message.data
+                    this.sendUpdatedGameState()
                     break;
             }
         }
@@ -54,7 +57,7 @@ export default class GameState {
 
     addPlayer(player) {
         this.state.players[player.id] = player
-        this.onChange()
+        this.sendUpdatedGameState()
     }
 
     getPlayers() {
@@ -62,14 +65,17 @@ export default class GameState {
     }
 
     updatePlayer(updatedPlayer) {
-        this.state.players[updatedPlayer.id] = {...this.state.players[updatedPlayer.id], ...updatedPlayer}
+        const oldPlayerState = this.state.players[updatedPlayer.id]
 
-        if (this.connection.isHosting) {
-            this.onChange()
-        } else {
-            this.sendPlayerStateToHost(this.state.players[updatedPlayer.id])
+        if (!deepEquals(oldPlayerState, updatedPlayer)) {
+            this.state.players[updatedPlayer.id] = {...this.state.players[updatedPlayer.id], ...updatedPlayer}
+
+            if (this.connection.isHosting) {
+                this.sendUpdatedGameState()
+            } else {
+                this.sendPlayerStateToHost(this.state.players[updatedPlayer.id])
+            }
         }
-
 
     }
 

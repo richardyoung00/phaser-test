@@ -43,6 +43,8 @@ function start() {
 }
 
 function hostGame(username) {
+	connection.beginHosting()
+
 	gameState.addPlayer({
 		id: connection.peerId,
 		name: username,
@@ -52,7 +54,7 @@ function hostGame(username) {
 		rotation: 0
 	})
 
-	connection.beginHosting()
+
 
 	const newUrl = window.location.origin + window.location.pathname + '?gameId=' + connection.hostId;
 	window.history.pushState({path:newUrl},'',newUrl);
