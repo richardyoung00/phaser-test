@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import ProjectileWeapon from "../modules/ProjectileWeapon";
 
 export default class Game extends Phaser.Scene {
 
@@ -11,7 +12,7 @@ export default class Game extends Phaser.Scene {
     constructor() {
         super('game')
         this.player = null
-        this.playerSprites = {}
+        this.players = {}
     }
 
     init() {
@@ -55,9 +56,22 @@ export default class Game extends Phaser.Scene {
             if (!this.player) {
                 return
             }
-            const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, cursor.x + this.cameras.main.scrollX, cursor.y + this.cameras.main.scrollY)
-            this.player.setRotation(angle + (Math.PI/2))
+            const angle = Phaser.Math.Angle.Between(this.player.container.x, this.player.container.y, cursor.x + this.cameras.main.scrollX, cursor.y + this.cameras.main.scrollY)
+            this.player.sprite.setRotation(angle + (Math.PI/2))
         })
+
+        this.input.on('pointerdown', (pointer) => {
+            this.shootWeapon()
+        })
+
+    }
+
+    shootWeapon() {
+        const x = this.player.container.x
+        const y = this.player.container.y
+        const direction = this.player.sprite.rotation - (Math.PI/2)
+
+        this.player.weapon.fireBullet(x, y, direction)
 
     }
 
@@ -66,15 +80,23 @@ export default class Game extends Phaser.Scene {
         for (let p of allPlayers) {
 
 
-            if (!this.playerSprites[p.id]) { //add new sprite
-                this.playerSprites[p.id] = this.physics.add.sprite(p.x, p.y, p.texture).setRotation(p.rotation)
+            if (!this.players[p.id]) { //add new sprite
+
+                const sprite = this.physics.add.sprite(0, 0, p.texture).setRotation(p.rotation)
+                const label = this.add.text(0, 35, p.name, { font: '12px Arial', fill: '#ffffff', align:'center' }).setOrigin(0.5);
+                const container = this.add.container(p.x, p.y, [sprite, label])
+                const weapon = new ProjectileWeapon(this);
+                this.physics.world.enable(container);
+                this.players[p.id] = {container, label, sprite, weapon}
+
                 if (p.id === this.peerId) {
-                    this.player = this.playerSprites[p.id]
-                    this.cameras.main.startFollow(this.player);
+                    this.player = this.players[p.id]
+                    this.cameras.main.startFollow(this.player.container);
                 }
 
             } else { // update the existing sprite
-                this.playerSprites[p.id].setX(p.x).setY(p.y).setTexture(p.texture).setRotation(p.rotation)
+                this.players[p.id].container.setX(p.x).setY(p.y)
+                this.players[p.id].sprite.setTexture(p.texture).setRotation(p.rotation)
             }
 
         }
@@ -85,10 +107,10 @@ export default class Game extends Phaser.Scene {
         let newPlayerState = {
             id: this.peerId,
             name: this.name,
-            x: this.player.x,
-            y: this.player.y,
-            texture: this.player.texture.key,
-            rotation: this.player.rotation,
+            x: this.player.container.x,
+            y: this.player.container.y,
+            texture: this.player.sprite.texture.key,
+            rotation: this.player.sprite.rotation,
         }
 
         this.gameState.updatePlayer(newPlayerState)
@@ -103,19 +125,19 @@ export default class Game extends Phaser.Scene {
         const speed = 200
 
         if (this.cursors.left.isDown || this.cursors.left_alt.isDown) {
-            this.player.setVelocity(-speed, 0)
+            this.player.container.body.setVelocity(-speed, 0)
         }
         else if (this.cursors.right.isDown || this.cursors.right_alt.isDown) {
-            this.player.setVelocity(speed, 0)
+            this.player.container.body.setVelocity(speed, 0)
         }
         else if (this.cursors.up.isDown || this.cursors.up_alt.isDown) {
-            this.player.setVelocity(0, -speed)
+            this.player.container.body.setVelocity(0, -speed)
         }
         else if (this.cursors.down.isDown || this.cursors.down_alt.isDown) {
-            this.player.setVelocity(0, speed)
+            this.player.container.body.setVelocity(0, speed)
         }
         else {
-            this.player.setVelocity(0, 0)
+            this.player.container.body.setVelocity(0, 0)
         }
 
         this.updatePlayer()
