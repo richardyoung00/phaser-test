@@ -3,5 +3,6 @@ export const base = {
     name: "Base Map",
     height: 1000,
     width: 1000,
-    tileTexture: "concrete"
+    tileTexture: "map",
+    tileTextureFrame: 0
 }

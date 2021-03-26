@@ -39,6 +39,8 @@ export default class ProjectileWeapon extends Phaser.Physics.Arcade.Group {
             key: this.weaponData.texture,
             active: false,
             visible: false,
+            bounceX: 1,
+            bounceY: 1,
             classType: ProjectileWeaponBullet
         });
     }

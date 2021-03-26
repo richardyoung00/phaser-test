@@ -116,7 +116,6 @@ export default class Connection {
         await this.ensureConnectionOpen(conn)
 
         conn.on('data', (data) => {
-            console.log(data)
             if (this.onMessage) {
                 this.onMessage(data)
             }
@@ -125,7 +124,9 @@ export default class Connection {
 
 
         conn.on('close', () => {
-            console.error('Connection closed');
+            if (this.onGuestDisconnected) {
+                this.onGuestDisconnected(conn.metadata)
+            }
         });
 
         // this.conn.send('Hello from ' + this.peer.id);

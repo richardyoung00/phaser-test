@@ -6,10 +6,11 @@ export default class GameState {
         this.setupConnectionHandlers()
 
         this.state = {
+            map: null,
             players: {
 
             },
-            map: null
+            messages: []
         }
     }
 
@@ -47,7 +48,14 @@ export default class GameState {
     setupConnectionHandlers() {
         this.connection.onGuestConnected = (peerId, metaData) => {
             console.log("connected " + peerId)
+            this.state.messages.push(metaData.name + " has joined the game")
             this.addPlayer(metaData)
+        }
+
+        this.connection.onGuestDisconnected = (metaData) => {
+            console.log("player left " + metaData.id)
+            this.state.messages.push(metaData.name + " has left the game")
+            this.removePlayer(metaData)
         }
 
         this.connection.onMessage = (message) => {
@@ -66,6 +74,12 @@ export default class GameState {
 
     addPlayer(player) {
         this.state.players[player.id] = player
+        this.state.players[player.id].status = "connected"
+        this.sendUpdatedGameState()
+    }
+
+    removePlayer(player) {
+        this.state.players[player.id].status = "disconnected"
         this.sendUpdatedGameState()
     }
 

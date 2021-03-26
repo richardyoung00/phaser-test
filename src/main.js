@@ -50,9 +50,11 @@ function hostGame(username) {
 		name: username,
 		x: 100,
 		y: 100,
-		texture: "character",
+		texture: "tanks",
+		textureFrame: "tankBlack",
 		weapon: "blaster",
-		rotation: 0
+		rotation: 0,
+		turretRotation: 0
 	})
 
 	gameState.setMapName("base")
@@ -72,8 +74,11 @@ async function joinGame(username, hostId) {
 		name: username,
 		x: 200,
 		y: 200,
-		texture: "character",
-		rotation: 0
+		texture: "tanks",
+		textureFrame: "tankBlack",
+		weapon: "blaster",
+		rotation: 0,
+		turretRotation: 0
 	}
 	try {
 		await connection.connectToHost(hostId, playerDetails)

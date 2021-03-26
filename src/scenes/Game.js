@@ -63,7 +63,7 @@ export default class Game extends Phaser.Scene {
                 return
             }
             const angle = Phaser.Math.Angle.Between(this.player.container.x, this.player.container.y, cursor.x + this.cameras.main.scrollX, cursor.y + this.cameras.main.scrollY)
-            this.player.sprite.setRotation(angle + (Math.PI / 2))
+            this.player.turret.setRotation(angle + (Math.PI / 2))
         })
 
         this.input.on('pointerdown', (pointer) => {
@@ -73,8 +73,8 @@ export default class Game extends Phaser.Scene {
     }
 
     createMap() {
-        const {width, height, tileTexture} = this.mapData
-        let ts = this.add.tileSprite(0, 0, width, height, tileTexture)
+        const {width, height, tileTexture, tileTextureFrame} = this.mapData
+        let ts = this.add.tileSprite(0, 0, width, height, tileTexture, tileTextureFrame)
         // this.cameras.main.setZoom(0.8);
 
         this.physics.world.setBounds(-width/2, -height/2, width, height);
@@ -83,7 +83,7 @@ export default class Game extends Phaser.Scene {
     shootWeapon() {
         const x = this.player.container.x
         const y = this.player.container.y
-        const direction = this.player.sprite.rotation - (Math.PI / 2)
+        const direction = this.player.turret.rotation - (Math.PI / 2)
 
         this.player.weapon.fireBullet(x, y, direction)
 
@@ -96,20 +96,22 @@ export default class Game extends Phaser.Scene {
 
             if (!this.players[p.id]) { //add new sprite
 
-                const sprite = this.physics.add.sprite(0, 0, p.texture).setRotation(p.rotation)
-                const label = this.add.text(0, 35, p.name, {
+                const sprite = this.physics.add.sprite(0, 0, p.texture, p.textureFrame).setRotation(p.rotation).setScale(0.5)
+                const label = this.add.text(0, 30, p.name, {
                     font: '12px Arial',
                     fill: '#ffffff',
                     align: 'center'
                 }).setOrigin(0.5);
 
-                const container = this.add.container(p.x, p.y, [sprite, label])
+                const turret = this.physics.add.sprite(0, 0, "tanks", "barrelBlack").setRotation(p.rotation).setOrigin(0.5,1.2).setScale(0.5);
+
+                const container = this.add.container(p.x, p.y, [sprite, label, turret ])
                 this.physics.world.enable(container);
 
                 const weaponData = getWeaponData(p.weapon)
                 const weapon = new ProjectileWeapon(this, weaponData);
 
-                this.players[p.id] = {container, label, sprite, weapon}
+                this.players[p.id] = {container, label, sprite, turret, weapon}
 
                 if (p.id === this.peerId) {
                     this.player = this.players[p.id]
@@ -120,7 +122,13 @@ export default class Game extends Phaser.Scene {
 
             } else { // update the existing sprite
                 this.players[p.id].container.setX(p.x).setY(p.y)
-                this.players[p.id].sprite.setTexture(p.texture).setRotation(p.rotation)
+                this.players[p.id].sprite.setTexture(p.texture, p.textureFrame).setRotation(p.rotation)
+                this.players[p.id].turret.setRotation(p.turretRotation)
+
+                if (p.status === "disconnected") {
+                    this.players[p.id].container.setActive(false);
+                    this.players[p.id].container.setVisible(false);
+                }
             }
 
         }
@@ -130,11 +138,12 @@ export default class Game extends Phaser.Scene {
     updatePlayer() {
         let newPlayerState = {
             id: this.peerId,
-            name: this.name,
             x: this.player.container.x,
             y: this.player.container.y,
             texture: this.player.sprite.texture.key,
+            textureFrame: this.player.sprite.frame.name,
             rotation: this.player.sprite.rotation,
+            turretRotation: this.player.turret.rotation,
         }
 
         this.gameState.updatePlayer(newPlayerState)
@@ -150,12 +159,19 @@ export default class Game extends Phaser.Scene {
 
         if (this.cursors.left.isDown || this.cursors.left_alt.isDown) {
             this.player.container.body.setVelocity(-speed, 0)
+            this.player.sprite.setRotation(Math.PI* 3 /2)
+
         } else if (this.cursors.right.isDown || this.cursors.right_alt.isDown) {
             this.player.container.body.setVelocity(speed, 0)
+            this.player.sprite.setRotation(Math.PI /2)
+
         } else if (this.cursors.up.isDown || this.cursors.up_alt.isDown) {
             this.player.container.body.setVelocity(0, -speed)
+            this.player.sprite.setRotation(0)
+
         } else if (this.cursors.down.isDown || this.cursors.down_alt.isDown) {
             this.player.container.body.setVelocity(0, speed)
+            this.player.sprite.setRotation(Math.PI)
         } else {
             this.player.container.body.setVelocity(0, 0)
         }
