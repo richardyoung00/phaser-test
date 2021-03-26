@@ -1,5 +1,7 @@
 import Phaser from 'phaser'
 import ProjectileWeapon from "../modules/ProjectileWeapon";
+import {getMapData} from "../game_data/maps";
+import {getWeaponData} from "../game_data/weapons";
 
 export default class Game extends Phaser.Scene {
 
@@ -31,10 +33,11 @@ export default class Game extends Phaser.Scene {
         });
         this.connection = this.registry.get('connection')
         this.gameState = this.registry.get('gameState')
+        this.mapData = getMapData(this.gameState.getMapName())
     }
 
     create() {
-        const { width, height } = this.scale
+        const {width, height} = this.scale
 
         // Set aspect ratio to the same as viewport (may break on portrait or weird sized screens)
         // const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0)
@@ -45,19 +48,22 @@ export default class Game extends Phaser.Scene {
         const hostId = this.connection.hostId
         this.peerId = this.connection.peerId
 
-        let ts = this.add.tileSprite(0, 0, 1000, 1000, 'concrete')
+        this.createMap()
 
-        let hostIdText = this.add.text(6,6, 'Game join code: ' + hostId, {font: '12px Arial', fill: '#ffffff'}).setScrollFactor(0);
+        let hostIdText = this.add.text(6, 6, 'Game join code: ' + hostId, {
+            font: '12px Arial',
+            fill: '#ffffff'
+        }).setScrollFactor(0);
 
 
         this.renderPlayerSprites()
 
-        this.input.on('pointermove',  (cursor) => {
+        this.input.on('pointermove', (cursor) => {
             if (!this.player) {
                 return
             }
             const angle = Phaser.Math.Angle.Between(this.player.container.x, this.player.container.y, cursor.x + this.cameras.main.scrollX, cursor.y + this.cameras.main.scrollY)
-            this.player.sprite.setRotation(angle + (Math.PI/2))
+            this.player.sprite.setRotation(angle + (Math.PI / 2))
         })
 
         this.input.on('pointerdown', (pointer) => {
@@ -66,10 +72,18 @@ export default class Game extends Phaser.Scene {
 
     }
 
+    createMap() {
+        const {width, height, tileTexture} = this.mapData
+        let ts = this.add.tileSprite(0, 0, width, height, tileTexture)
+        // this.cameras.main.setZoom(0.8);
+
+        this.physics.world.setBounds(-width/2, -height/2, width, height);
+    }
+
     shootWeapon() {
         const x = this.player.container.x
         const y = this.player.container.y
-        const direction = this.player.sprite.rotation - (Math.PI/2)
+        const direction = this.player.sprite.rotation - (Math.PI / 2)
 
         this.player.weapon.fireBullet(x, y, direction)
 
@@ -83,16 +97,26 @@ export default class Game extends Phaser.Scene {
             if (!this.players[p.id]) { //add new sprite
 
                 const sprite = this.physics.add.sprite(0, 0, p.texture).setRotation(p.rotation)
-                const label = this.add.text(0, 35, p.name, { font: '12px Arial', fill: '#ffffff', align:'center' }).setOrigin(0.5);
+                const label = this.add.text(0, 35, p.name, {
+                    font: '12px Arial',
+                    fill: '#ffffff',
+                    align: 'center'
+                }).setOrigin(0.5);
+
                 const container = this.add.container(p.x, p.y, [sprite, label])
-                const weapon = new ProjectileWeapon(this);
                 this.physics.world.enable(container);
+
+                const weaponData = getWeaponData(p.weapon)
+                const weapon = new ProjectileWeapon(this, weaponData);
+
                 this.players[p.id] = {container, label, sprite, weapon}
 
                 if (p.id === this.peerId) {
                     this.player = this.players[p.id]
                     this.cameras.main.startFollow(this.player.container);
                 }
+
+                container.body.setCollideWorldBounds(true);
 
             } else { // update the existing sprite
                 this.players[p.id].container.setX(p.x).setY(p.y)
@@ -126,17 +150,13 @@ export default class Game extends Phaser.Scene {
 
         if (this.cursors.left.isDown || this.cursors.left_alt.isDown) {
             this.player.container.body.setVelocity(-speed, 0)
-        }
-        else if (this.cursors.right.isDown || this.cursors.right_alt.isDown) {
+        } else if (this.cursors.right.isDown || this.cursors.right_alt.isDown) {
             this.player.container.body.setVelocity(speed, 0)
-        }
-        else if (this.cursors.up.isDown || this.cursors.up_alt.isDown) {
+        } else if (this.cursors.up.isDown || this.cursors.up_alt.isDown) {
             this.player.container.body.setVelocity(0, -speed)
-        }
-        else if (this.cursors.down.isDown || this.cursors.down_alt.isDown) {
+        } else if (this.cursors.down.isDown || this.cursors.down_alt.isDown) {
             this.player.container.body.setVelocity(0, speed)
-        }
-        else {
+        } else {
             this.player.container.body.setVelocity(0, 0)
         }
 

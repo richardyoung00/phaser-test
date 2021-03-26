@@ -51,8 +51,11 @@ function hostGame(username) {
 		x: 100,
 		y: 100,
 		texture: "character",
+		weapon: "blaster",
 		rotation: 0
 	})
+
+	gameState.setMapName("base")
 
 
 

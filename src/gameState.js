@@ -8,8 +8,17 @@ export default class GameState {
         this.state = {
             players: {
 
-            }
+            },
+            map: null
         }
+    }
+
+    setMapName(map) {
+        this.state.map = map
+    }
+
+    getMapName() {
+        return this.state.map
     }
 
     sendUpdatedGameState() {
