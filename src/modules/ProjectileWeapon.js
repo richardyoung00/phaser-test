@@ -56,6 +56,7 @@ export default class ProjectileWeapon extends Phaser.Physics.Arcade.Group {
             bullet.fire(x, y, direction, this.weaponData);
             this.lastFire = Date.now()
         }
+        return bullet
     }
 
 }

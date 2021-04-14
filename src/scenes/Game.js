@@ -15,6 +15,7 @@ export default class Game extends Phaser.Scene {
         super('game')
         this.player = null
         this.players = {}
+        this.projectiles = {}
     }
 
     init() {
@@ -47,6 +48,7 @@ export default class Game extends Phaser.Scene {
 
         const hostId = this.connection.hostId
         this.peerId = this.connection.peerId
+        this.isHost = this.connection.isHosting
 
         this.createMap()
 
@@ -56,7 +58,7 @@ export default class Game extends Phaser.Scene {
         }).setScrollFactor(0);
 
 
-        this.renderPlayerSprites()
+        this.renderSprites()
 
         this.input.on('pointermove', (cursor) => {
             if (!this.player) {
@@ -85,11 +87,27 @@ export default class Game extends Phaser.Scene {
         const y = this.player.container.y
         const direction = this.player.turret.rotation - (Math.PI / 2)
 
-        this.player.weapon.fireBullet(x, y, direction)
+        // const projectileSprite = this.player.weapon.fireBullet(x, y, direction)
+        // if (projectileSprite) {
+        //     this.updateProjectileState(projectileSprite)
+        // }
+
+        const weaponData = {
+            playerId: this.peerId,
+            x,
+            y,
+            direction
+        }
+        this.gameState.shootWeapon(weaponData)
 
     }
 
-    renderPlayerSprites() {
+    renderSprites() {
+        this.renderPlayers()
+        this.renderProjectiles()
+    }
+
+    renderPlayers() {
         const allPlayers = this.gameState.getPlayers()
         for (let p of allPlayers) {
 
@@ -135,7 +153,32 @@ export default class Game extends Phaser.Scene {
 
     }
 
-    updatePlayer() {
+    renderProjectiles() {
+        const allProjectiles = this.gameState.getProjectiles()
+        for (let p of allProjectiles) {
+            if (!this.projectiles[p.id]) { //add new sprite
+                this.projectiles[p.id] = this.physics.add.sprite(p.x, p.y, p.texture)
+            }  
+            // Not setting X and Y here could be a possible optimisation in case we get lag from server
+            this.projectiles[p.id].setX(p.x)
+            this.projectiles[p.id].setY(p.y)
+            this.projectiles[p.id].setTexture(p.texture)
+            this.projectiles[p.id].setVelocity(p.velocityX, p.velocityY)
+        }
+
+        const projectileKeys = allProjectiles.map(p => p.id)
+
+        //check if a projectile no longer exists and delete
+        for (let [key, projectile] of Object.entries(this.projectiles)) {
+            if(!projectileKeys.includes(key)) {
+                projectile.destroy()
+                delete this.projectiles[key]
+            }
+        }
+
+    }
+
+    updatePlayerState() {
         let newPlayerState = {
             id: this.peerId,
             x: this.player.container.x,
@@ -147,6 +190,30 @@ export default class Game extends Phaser.Scene {
         }
 
         this.gameState.updatePlayer(newPlayerState)
+    }
+
+
+    // Host only
+    updateProjectileStates() {
+        const projectilePositions = []
+        for (let [key, projectile] of Object.entries(this.projectiles)) {
+            
+            //Projectile goes out of bounds
+            if (!this.physics.world.bounds.contains(projectile.x, projectile.y)) {
+                projectile.destroy(false);
+                this.gameState.removeProjectile(key)
+                delete this.projectiles[key]
+
+            }
+
+            projectilePositions.push({
+                id: key,
+                x: projectile.x,
+                y: projectile.y
+            })
+        }
+
+        this.gameState.updateProjectilePositions(projectilePositions)
     }
 
 
@@ -176,9 +243,10 @@ export default class Game extends Phaser.Scene {
             this.player.container.body.setVelocity(0, 0)
         }
 
-        this.updatePlayer()
-
-
-        this.renderPlayerSprites()
+        this.updatePlayerState()
+        if (this.connection.isHosting) {
+            this.updateProjectileStates()
+        }
+        this.renderSprites()
     }
 }
