@@ -87,6 +87,7 @@ export default class GameState {
 
         this.connection.onGuestDisconnected = (metaData) => {
             console.log("player left " + metaData.id)
+            //todo: handle this if the person who left is the host
             this.state.messages.push(metaData.name + " has left the game")
             this.removePlayer(metaData)
         }
