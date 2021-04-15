@@ -88,12 +88,40 @@ async function joinGame(username, hostId) {
 	}
 }
 
+function showTab(id) {
+	const tabContents = document.querySelectorAll(".tabcontent")
+	for (let tabContent of tabContents) {
+		tabContent.style.display = "none"
+	}
+
+	const tabLinks = document.querySelectorAll("button.tablinks")
+	for (let tabLink of tabLinks) {
+		if (tabLink.getAttribute("tab") === id) {
+			tabLink.classList.add("active")
+		} else {
+			tabLink.classList.remove("active")
+		}
+	}
+
+	const selectedTab = document.getElementById(id)
+	selectedTab.style.display = "";
+
+}
+
 window.onload = function() {
 
 	const userNameInput = document.querySelector("#username")
 	const joinGameIdInput = document.querySelector("#join-game-id")
 	const joinButton = document.querySelector("#join-button")
 	const hostButton = document.querySelector("#host-button")
+
+	const tabButtons = document.querySelectorAll("button.tablinks")
+	for (let tabButton of tabButtons) {
+		tabButton.addEventListener('click', () => {
+			showTab(tabButton.getAttribute('tab'))
+		})
+	}
+	showTab("join")
 
 	hostButton.addEventListener('click', () => {
 		if (!userNameInput.value) {
@@ -116,6 +144,11 @@ window.onload = function() {
 
 		joinGame(userNameInput.value, joinGameIdInput.value)
 	})
+
+	const searchParams = new URLSearchParams(window.location.search);
+	if (searchParams.has("gameId")) {
+		joinGameIdInput.value = searchParams.get("gameId")
+	}
 
 }
 
