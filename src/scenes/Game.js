@@ -15,7 +15,10 @@ export default class Game extends Phaser.Scene {
         super('game')
         this.player = null
         this.players = {}
+
         this.projectiles = {}
+        
+
     }
 
     init() {
@@ -35,9 +38,19 @@ export default class Game extends Phaser.Scene {
         this.connection = this.registry.get('connection')
         this.gameState = this.registry.get('gameState')
         this.mapData = getMapData(this.gameState.getMapName())
+
+
+        window.game = this
     }
 
     create() {
+
+        // Collision groups
+        this.playersGroup = this.physics.add.group()
+        this.projectilesGroup = this.physics.add.group()
+        this.objectPlayerCollideGroup = this.add.group()
+        this.objectProjectileCollideGroup = this.physics.add.staticGroup()
+
         const {width, height} = this.scale
 
         // Set aspect ratio to the same as viewport (may break on portrait or weird sized screens)
@@ -52,6 +65,10 @@ export default class Game extends Phaser.Scene {
 
         this.createMap()
 
+        if (this.connection.isHosting) {
+            this.setupCollisions()
+        }
+
         let hostIdText = this.add.text(6, 6, 'Game join code: ' + hostId, {
             font: '12px Arial',
             fill: '#ffffff'
@@ -64,7 +81,7 @@ export default class Game extends Phaser.Scene {
             if (!this.player) {
                 return
             }
-            const angle = Phaser.Math.Angle.Between(this.player.container.x, this.player.container.y, cursor.x + this.cameras.main.scrollX, cursor.y + this.cameras.main.scrollY)
+            const angle = Phaser.Math.Angle.Between(this.player.sprite.x, this.player.sprite.y, cursor.x + this.cameras.main.scrollX, cursor.y + this.cameras.main.scrollY)
             this.player.turret.setRotation(angle + (Math.PI / 2))
         })
 
@@ -75,11 +92,41 @@ export default class Game extends Phaser.Scene {
     }
 
     createMap() {
-        const {width, height, tileTexture, tileTextureFrame} = this.mapData
+        const {width, height, tileTexture, tileTextureFrame, objects} = this.mapData
         let ts = this.add.tileSprite(0, 0, width, height, tileTexture, tileTextureFrame)
         // this.cameras.main.setZoom(0.8);
 
+        for (let o of objects) {
+            const sprite = this.physics.add.image(o.x, o.y, o.texture, o.textureFrame)
+            sprite.body.setImmovable(true)
+            if (o.playerCollision) {
+                this.objectPlayerCollideGroup.add(sprite)
+            }
+            if (o.bulletCollision) {
+                this.objectProjectileCollideGroup.add(sprite)
+                this.objectProjectileCollideGroup.refresh()
+            }
+        }
+
         this.physics.world.setBounds(-width/2, -height/2, width, height);
+    }
+
+    setupCollisions() {
+        console.log("setting colllsions")
+        //player collides with map object
+        this.physics.add.collider(this.objectPlayerCollideGroup, this.playersGroup);
+        //projctile collides with map object 
+        this.physics.add.overlap(this.objectProjectileCollideGroup, this.projectilesGroup, this.onProjectileCollideWithObject);
+        //projctile collides with player
+        this.physics.add.overlap(this.playersGroup, this.projectilesGroup, this.onProjectileCollideWithPlayer);
+    }
+
+    onProjectileCollideWithObject(object, projectile) {
+        //todo: destroy or bounce projectile here
+    }
+    
+    onProjectileCollideWithPlayer(player, projectile) {
+        //todo: destroy player
     }
 
     shootWeapon() {
@@ -110,38 +157,43 @@ export default class Game extends Phaser.Scene {
 
             if (!this.players[p.id]) { //add new sprite
 
-                const sprite = this.physics.add.sprite(0, 0, p.texture, p.textureFrame).setRotation(p.rotation).setScale(0.5)
-                const label = this.add.text(0, 30, p.name, {
+                const sprite = this.physics.add.sprite(p.x, p.y, p.texture, p.textureFrame).setRotation(p.rotation).setScale(0.5)
+                const label = this.add.text(p.x, p.y + 30, p.name, {
                     font: '12px Arial',
                     fill: '#ffffff',
                     align: 'center'
                 }).setOrigin(0.5);
 
-                const turret = this.physics.add.sprite(0, 0, "tanks", "barrelBlack").setRotation(p.rotation).setOrigin(0.5,1.2).setScale(0.5);
-
-                const container = this.add.container(p.x, p.y, [sprite, label, turret ])
-                this.physics.world.enable(container);
+                const turret = this.physics.add.sprite(p.x, p.y, "tanks", "barrelBlack").setRotation(p.rotation).setOrigin(0.5,1.2).setScale(0.5);
 
                 const weaponData = getWeaponData(p.weapon)
                 const weapon = new ProjectileWeapon(this, weaponData);
 
-                this.players[p.id] = {container, label, sprite, turret, weapon}
+                this.players[p.id] = {label, sprite, turret, weapon}
 
                 if (p.id === this.peerId) {
                     this.player = this.players[p.id]
-                    this.cameras.main.startFollow(this.player.container);
+                    this.cameras.main.startFollow(sprite);
                 }
 
-                container.body.setCollideWorldBounds(true);
+                this.playersGroup.add(sprite)
+
+                sprite.setCollideWorldBounds(true);
 
             } else { // update the existing sprite
-                this.players[p.id].container.setX(p.x).setY(p.y)
+                this.players[p.id].sprite.setX(p.x).setY(p.y)
                 this.players[p.id].sprite.setTexture(p.texture, p.textureFrame).setRotation(p.rotation)
+                this.players[p.id].turret.setX(p.x).setY(p.y)
                 this.players[p.id].turret.setRotation(p.turretRotation)
+                this.players[p.id].label.setX(p.x).setY(p.y + 30)
 
                 if (p.status === "disconnected") {
-                    this.players[p.id].container.setActive(false);
-                    this.players[p.id].container.setVisible(false);
+                    this.players[p.id].sprite.setActive(false);
+                    this.players[p.id].sprite.setVisible(false);
+                    this.players[p.id].turret.setActive(false);
+                    this.players[p.id].turret.setVisible(false);
+                    this.players[p.id].label.setActive(false);
+                    this.players[p.id].label.setVisible(false);
                 }
             }
 
@@ -153,16 +205,20 @@ export default class Game extends Phaser.Scene {
         const allProjectiles = this.gameState.getProjectiles()
         for (let p of allProjectiles) {
             if (!this.projectiles[p.id]) { //add new sprite
-                this.projectiles[p.id] = this.physics.add.sprite(p.x, p.y, p.texture, p.textureFrame)
+                const projectile = this.physics.add.sprite(p.x, p.y, p.texture, p.textureFrame)
+                projectile.setScale(p.scale)
+                projectile.setTexture(p.texture, p.textureFrame)
+                projectile.setRotation(p.rotation)
+                projectile.setTint(p.tint)
+                this.projectilesGroup.add(projectile)
+                this.projectiles[p.id] = projectile
+                this.projectiles[p.id].setVelocity(p.velocityX, p.velocityY)
+
             }  
             // Not setting X and Y here could be a possible optimisation in case we get lag from server
-            this.projectiles[p.id].setScale(p.scale)
             this.projectiles[p.id].setX(p.x)
             this.projectiles[p.id].setY(p.y)
-            this.projectiles[p.id].setTexture(p.texture, p.textureFrame)
-            this.projectiles[p.id].setRotation(p.rotation)
-            this.projectiles[p.id].setVelocity(p.velocityX, p.velocityY)
-            this.projectiles[p.id].setTint(p.tint)
+            
         }
 
         const projectileKeys = allProjectiles.map(p => p.id)
@@ -180,8 +236,8 @@ export default class Game extends Phaser.Scene {
     updatePlayerState() {
         let newPlayerState = {
             id: this.peerId,
-            x: this.player.container.x,
-            y: this.player.container.y,
+            x: this.player.sprite.x,
+            y: this.player.sprite.y,
             texture: this.player.sprite.texture.key,
             textureFrame: this.player.sprite.frame.name,
             rotation: this.player.sprite.rotation,
@@ -224,22 +280,22 @@ export default class Game extends Phaser.Scene {
         const speed = 200
 
         if (this.cursors.left.isDown || this.cursors.left_alt.isDown) {
-            this.player.container.body.setVelocity(-speed, 0)
+            this.player.sprite.body.setVelocity(-speed, 0)
             this.player.sprite.setRotation(Math.PI* 3 /2)
 
         } else if (this.cursors.right.isDown || this.cursors.right_alt.isDown) {
-            this.player.container.body.setVelocity(speed, 0)
+            this.player.sprite.body.setVelocity(speed, 0)
             this.player.sprite.setRotation(Math.PI /2)
 
         } else if (this.cursors.up.isDown || this.cursors.up_alt.isDown) {
-            this.player.container.body.setVelocity(0, -speed)
+            this.player.sprite.body.setVelocity(0, -speed)
             this.player.sprite.setRotation(0)
 
         } else if (this.cursors.down.isDown || this.cursors.down_alt.isDown) {
-            this.player.container.body.setVelocity(0, speed)
+            this.player.sprite.body.setVelocity(0, speed)
             this.player.sprite.setRotation(Math.PI)
         } else {
-            this.player.container.body.setVelocity(0, 0)
+            this.player.sprite.body.setVelocity(0, 0)
         }
 
         this.updatePlayerState()
@@ -247,5 +303,6 @@ export default class Game extends Phaser.Scene {
             this.updateProjectileStates()
         }
         this.renderSprites()
+        
     }
 }
