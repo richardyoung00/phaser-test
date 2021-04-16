@@ -83,14 +83,10 @@ export default class Game extends Phaser.Scene {
     }
 
     shootWeapon() {
-        const x = this.player.container.x
-        const y = this.player.container.y
+        const turretEnd = this.player.turret.getTopCenter(null, true)
+        const x = turretEnd.x
+        const y = turretEnd.y
         const direction = this.player.turret.rotation - (Math.PI / 2)
-
-        // const projectileSprite = this.player.weapon.fireBullet(x, y, direction)
-        // if (projectileSprite) {
-        //     this.updateProjectileState(projectileSprite)
-        // }
 
         const weaponData = {
             playerId: this.peerId,
@@ -157,13 +153,16 @@ export default class Game extends Phaser.Scene {
         const allProjectiles = this.gameState.getProjectiles()
         for (let p of allProjectiles) {
             if (!this.projectiles[p.id]) { //add new sprite
-                this.projectiles[p.id] = this.physics.add.sprite(p.x, p.y, p.texture)
+                this.projectiles[p.id] = this.physics.add.sprite(p.x, p.y, p.texture, p.textureFrame)
             }  
             // Not setting X and Y here could be a possible optimisation in case we get lag from server
+            this.projectiles[p.id].setScale(p.scale)
             this.projectiles[p.id].setX(p.x)
             this.projectiles[p.id].setY(p.y)
-            this.projectiles[p.id].setTexture(p.texture)
+            this.projectiles[p.id].setTexture(p.texture, p.textureFrame)
+            this.projectiles[p.id].setRotation(p.rotation)
             this.projectiles[p.id].setVelocity(p.velocityX, p.velocityY)
+            this.projectiles[p.id].setTint(p.tint)
         }
 
         const projectileKeys = allProjectiles.map(p => p.id)

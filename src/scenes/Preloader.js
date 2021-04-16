@@ -24,7 +24,7 @@ export default class Preloader extends Phaser.Scene {
         this.load.image('bullet_1', bullet_1);
 
         this.load.atlasXML('tanks', tanksSheet, tanksAtlas)
-        this.load.spritesheet('map', mapTilesheet, {frameWidth: 64})
+        this.load.spritesheet('map', mapTilesheet,{frameWidth: 64})
     }
 
     create() {

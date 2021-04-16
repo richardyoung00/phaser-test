@@ -185,10 +185,13 @@ export default class GameState {
         this.state.projectiles[projectileId] = {
             id: projectileData.playerId + "_" + Date.now(),
             playerId: projectileData.playerId,
-            rotation: projectileData.direction,
+            rotation: projectileData.direction + (Math.PI / 2),
             x: projectileData.x,
             y: projectileData.y,
             texture: weaponData.texture,
+            textureFrame: weaponData.textureFrame,
+            scale: weaponData.scale,
+            tint: weaponData.tint,
             velocityX: velocity.x,
             velocityY: velocity.y
         }
