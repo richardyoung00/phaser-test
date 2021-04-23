@@ -4,6 +4,7 @@ import Preloader from './scenes/Preloader'
 import Game from './scenes/Game'
 import Connection from './multiplayer/connection'
 import GameState from "./gameState";
+import { playerDefaults } from './game_data/players';
 
 const connection = new Connection()
 const gameState = new GameState(connection)
@@ -47,15 +48,11 @@ function hostGame(username) {
 	connection.beginHosting()
 
 	gameState.addPlayer({
+		...playerDefaults,
 		id: connection.peerId,
 		name: username,
 		x: 100,
-		y: 100,
-		texture: "tanks",
-		textureFrame: "tankBlack",
-		weapon: "blaster",
-		rotation: 0,
-		turretRotation: 0
+		y: 100
 	})
 
 	gameState.setMapName("base")
@@ -71,15 +68,11 @@ function hostGame(username) {
 
 async function joinGame(username, hostId) {
 	const playerDetails = {
+		...playerDefaults,
 		id: connection.peerId,
 		name: username,
 		x: 200,
-		y: 200,
-		texture: "tanks",
-		textureFrame: "tankBlack",
-		weapon: "blaster",
-		rotation: 0,
-		turretRotation: 0
+		y: 200
 	}
 	try {
 		await connection.connectToHost(hostId, playerDetails)
