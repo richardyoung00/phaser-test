@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import ProjectileWeapon from "../modules/ProjectileWeapon";
 import {getMapData} from "../game_data/maps";
 import {getWeaponData} from "../game_data/weapons";
+import ProjectileSprite from '../game_objects/ProjectileSprite';
 
 export default class Game extends Phaser.Scene {
 
@@ -65,9 +66,9 @@ export default class Game extends Phaser.Scene {
 
         this.createMap()
 
-        if (this.connection.isHosting) {
+        // if (this.connection.isHosting) {
             this.setupCollisions()
-        }
+        // }
 
         let hostIdText = this.add.text(6, 6, 'Game join code: ' + hostId, {
             font: '12px Arial',
@@ -116,13 +117,13 @@ export default class Game extends Phaser.Scene {
         //player collides with map object
         this.physics.add.collider(this.objectPlayerCollideGroup, this.playersGroup);
         //projctile collides with map object 
-        this.physics.add.overlap(this.objectProjectileCollideGroup, this.projectilesGroup, this.onProjectileCollideWithObject);
+        this.physics.add.collider(this.objectProjectileCollideGroup, this.projectilesGroup, this.onProjectileCollideWithObject);
         //projctile collides with player
         this.physics.add.overlap(this.playersGroup, this.projectilesGroup, this.onProjectileCollideWithPlayer);
     }
 
     onProjectileCollideWithObject(object, projectile) {
-        //todo: destroy or bounce projectile here
+        // projectile.didCollideWithObject(object)
     }
     
     onProjectileCollideWithPlayer(player, projectile) {
@@ -205,19 +206,36 @@ export default class Game extends Phaser.Scene {
         const allProjectiles = this.gameState.getProjectiles()
         for (let p of allProjectiles) {
             if (!this.projectiles[p.id]) { //add new sprite
-                const projectile = this.physics.add.sprite(p.x, p.y, p.texture, p.textureFrame)
-                projectile.setScale(p.scale)
-                projectile.setTexture(p.texture, p.textureFrame)
-                projectile.setRotation(p.rotation)
-                projectile.setTint(p.tint)
-                this.projectilesGroup.add(projectile)
+                let projectile = new ProjectileSprite({
+                    scene: this,
+                    group: this.projectilesGroup,
+                    ...p
+                })
+                
                 this.projectiles[p.id] = projectile
-                this.projectiles[p.id].setVelocity(p.velocityX, p.velocityY)
 
-            }  
-            // Not setting X and Y here could be a possible optimisation in case we get lag from server
-            this.projectiles[p.id].setX(p.x)
-            this.projectiles[p.id].setY(p.y)
+                projectile.on("destroy", () => {
+                    console.log("destroy " + projectile.config.id)
+                    this.gameState.removeProjectile(projectile.config.id)
+                    delete this.projectiles[projectile.config.id]
+                })
+
+                projectile.on('bounce-off-horizontal', () => {
+                    this.gameState.updateProjectile({
+                        id: projectile.config.id,
+                        velocityY: -projectile.config.velocityY
+                    })
+                })
+
+            } else {
+
+                if (!this.isHost) {
+                    this.projectiles[p.id].setX(p.x)
+                    this.projectiles[p.id].setY(p.y)
+                }
+                
+            }
+
             
         }
 
@@ -255,7 +273,7 @@ export default class Game extends Phaser.Scene {
             
             //Projectile goes out of bounds
             if (!this.physics.world.bounds.contains(projectile.x, projectile.y)) {
-                projectile.destroy(false);
+                projectile.destroy();
                 this.gameState.removeProjectile(key)
                 delete this.projectiles[key]
 
@@ -268,7 +286,7 @@ export default class Game extends Phaser.Scene {
             })
         }
 
-        this.gameState.updateProjectilePositions(projectilePositions)
+        this.gameState.updateProjectiles(projectilePositions)
     }
 
 
@@ -298,11 +316,14 @@ export default class Game extends Phaser.Scene {
             this.player.sprite.body.setVelocity(0, 0)
         }
 
+
         this.updatePlayerState()
-        if (this.connection.isHosting) {
+        if (this.isHost) {
             this.updateProjectileStates()
         }
+
         this.renderSprites()
+
         
     }
 }

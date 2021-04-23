@@ -151,11 +151,23 @@ export default class GameState {
 
     }
 
-    updateProjectilePositions(positions) {
-        for (let p of positions) {
+    updateProjectiles(updatedProjectiles) {
+        for (let p of updatedProjectiles) {
             if (this.state.projectiles[p.id]) {
-                this.state.projectiles[p.id].x = p.x
-                this.state.projectiles[p.id].y = p.y
+                this.state.projectiles[p.id] = {
+                    ...this.state.projectiles[p.id],
+                    ...p
+                }
+            }
+        }
+        this.sendUpdatedGameState()
+    }
+
+    updateProjectile(updatedProjectile) {
+        if (this.state.projectiles[updatedProjectile.id]) {
+            this.state.projectiles[updatedProjectile.id] = {
+                ...this.state.projectiles[updatedProjectile.id],
+                ...updatedProjectile
             }
         }
         this.sendUpdatedGameState()
@@ -193,7 +205,8 @@ export default class GameState {
             scale: weaponData.scale,
             tint: weaponData.tint,
             velocityX: velocity.x,
-            velocityY: velocity.y
+            velocityY: velocity.y,
+            maxBounces: weaponData.max_bounces
         }
     }
 
@@ -206,10 +219,6 @@ export default class GameState {
                 data: projectileData
             })
         }
-    }
-
-    updateProjectile(updatedProjectile) {
-        console.log(updatedProjectile)
     }
 
 }
