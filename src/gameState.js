@@ -124,8 +124,8 @@ export default class GameState {
     }
     
     removeProjectile(projectileId) {
-        delete this.state.projectiles[projectileId]
         if (this.connection.isHosting) {
+            delete this.state.projectiles[projectileId]
             this.sendUpdatedGameState()
         }
     }
